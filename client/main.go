@@ -11,45 +11,13 @@ import (
 	"os"
 	"io/ioutil"
 	"log"
-	"container/list"
-	"github.com/go-yaml/yaml"
+//	"container/list"
+//	"github.com/go-yaml/yaml"
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/fsnotify/fsnotify"
 	"github.com/streadway/amqp"
 )
 
-func walkRooms(root Space) map[string]Space {
-        visited := make(map[string]Space)
-        queue := list.New()
-
-        queue.PushBack(root)
-        rootVnum := strconv.Itoa(root.Vnum)
-        visited[rootVnum] = root
-
-        for queue.Len() > 0 {
-
-                qnode := queue.Front()
-
-                for id, room := range qnode.Value.(Space).ExitRooms {
-                        if _, ok := visited[room.Vnums]; !ok {
-                                var queueRoom Space
-                                roomFile, err := os.Open("../pot/zones/"+room.Vnums+".yaml")
-                                if err != nil {
-                                        panic(err)
-                                }
-                                roomRaw, err := ioutil.ReadAll(roomFile)
-                                if err != nil {
-                                        panic(err)
-                                }
-                                err = yaml.Unmarshal(roomRaw, &queueRoom) 
-                                visited[id] = queueRoom
-                                queue.PushBack(queueRoom)
-                        }
-                }
-                queue.Remove(qnode)
-        }
-	return visited
-}
 
 
 func failOnError(err error, msg string) {
@@ -173,45 +141,9 @@ func logout(playName string) {
 	os.Rename("../pot/newWho", "../pot/who")
 }
 
-func who(playName string) []string {
-	var oldPlayers []string
-	
-	time.Sleep(100*time.Millisecond)
-	f, err := os.Open("../pot/who")
-	if err != nil {
-		panic(err)
-	}
-	content, err := ioutil.ReadAll(f)
-	if err != nil {
-		panic(err)
-	}
 
-	longUser := strings.Split(string(content), "\n")
-	for i := 1;i < len(longUser);i++ {
-		if playName == longUser[i] {
-			fmt.Print("YOU\n")
-			continue
-		}else if len(longUser[i]) > 1 && longUser[i] != playName {
-			fmt.Print(longUser[i]+"\n")
-		}
-		oldPlayers = append(oldPlayers, longUser[i])
-	}
-	f.Close()
-	return oldPlayers
-}
 
-func doPlayer(input string, play Player, format string) {
-	
-	if format == "--1920x1080main" {
-		
-
-		DescribePlayer(play)
-		describeEquipment(play)
-		describeInventory(play)
-	}
-}
-
-func doInput(input string, play Player, fileChange chan bool, whoList []string) {
+func doInput(input string, play Player, fileChange chan bool) {
 	connection := getConnectionString()
 	conn, err := amqp.Dial(connection)
 
@@ -442,7 +374,7 @@ func doGUIInput(play Player, input string) {
 }
 
 
-func actOn(play Player, fileChange chan bool, whoList []string) {
+func actOn(play Player, fileChange chan bool) {
         connection := getConnectionString()
         conn, err := amqp.Dial(connection)
 
@@ -882,3 +814,4 @@ func doWatch(input string, play Player, fileChange chan bool) string {
 
 	return ""
 }
+
